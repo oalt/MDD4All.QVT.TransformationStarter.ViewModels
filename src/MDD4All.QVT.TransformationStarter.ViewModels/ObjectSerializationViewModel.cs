@@ -1,0 +1,64 @@
+﻿using LL.MDE.Components.Qvt.Common.DataModels;
+using MDD4All.FileAccess.Contracts;
+using Newtonsoft.Json;
+using System;
+using System.IO;
+
+namespace MDD4All.QVT.TransformationStarter.ViewModels
+{
+    public class ObjectSerializationViewModel : DomainObjectViewModel
+    {
+        public ObjectSerializationViewModel(ParameterDescriptor parameter, 
+                                            IFileLoader fileLoader,
+                                            IFileSaver fileSaver) : base(parameter,
+                                                                         fileLoader,
+                                                                         fileSaver)
+        {
+        }
+
+        private string _filename;
+
+        public string Filename
+        {
+            get
+            {
+                return _filename;
+            }
+            set
+            {
+                _filename = value;
+                RaisePropertyChanged(nameof(ReadyToRunTransformation));
+            }
+        }
+
+        public string Format { get; set; } = "JSON";
+
+        public override bool ReadyToRunTransformation
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(Filename);
+            }
+        }
+
+        public override void InitializeDomainObject()
+        { 
+            Parameter.SerializationFilename = Filename;
+            
+            object domainObject = Activator.CreateInstance(Parameter.DotNetType);
+            Parameter.ParameterInstance = domainObject;
+        }
+
+        public override void ProcessTransformationResult()
+        {
+            string json = JsonConvert.SerializeObject(Parameter.ParameterInstance,
+                                                      Newtonsoft.Json.Formatting.Indented,
+                                                      new JsonSerializerSettings
+                                                      {
+                                                          NullValueHandling = NullValueHandling.Ignore,
+                                                      });
+
+            File.WriteAllText(Parameter.SerializationFilename, json);
+        }
+    }
+}
