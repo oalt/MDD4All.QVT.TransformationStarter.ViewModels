@@ -126,7 +126,13 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                         }
                         else
                         {
-                            /// TODO
+                            ObjectDeserializationViewModel objectDeserializationViewModel = new ObjectDeserializationViewModel(parameterDescriptor,
+                                                                                                                               _fileLoader,
+                                                                                                                               _fileSaver);
+
+                            objectDeserializationViewModel.PropertyChanged += OnDomainViewModelPropertyChanged;
+
+                            _checkOnlyViewModels.Add(objectDeserializationViewModel);
                         }
                         
                     }
