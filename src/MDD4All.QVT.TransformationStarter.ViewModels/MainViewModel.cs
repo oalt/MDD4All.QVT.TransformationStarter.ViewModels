@@ -3,6 +3,7 @@ using GalaSoft.MvvmLight.Command;
 using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.EAFacade.ModelTree.ViewModels;
 using MDD4All.FileAccess.Contracts;
+using System;
 using System.Windows.Input;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
@@ -27,7 +28,10 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
         private void InitializeCommands()
         {
             RunTransformationCommand = new RelayCommand(ExecuteRunTransformation);
+            ResetCommand = new RelayCommand(ExecuteResetCommand);
         }
+
+        
 
         public RepositoryTreeViewModel RepositoryTreeViewModel { get; set; }
 
@@ -52,17 +56,26 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
         public ICommand RunTransformationCommand { get; private set; }
 
-        
+        public ICommand ResetCommand { get; private set; }
 
         private void ExecuteRunTransformation()
         {
-            ActiveViewState = ViewState.TransformationRunning;
-
             TransformationViewModel.InitializeDomainObjects();
 
-            TransformationViewModel.TransformationDescriptor.TransformationStarter.StartTransformation();
+            if (TransformationViewModel.ReadyToRunTransformation)
+            {
+                ActiveViewState = ViewState.TransformationRunning;
 
-            TransformationViewModel.ProcessTransformationResults();
+                TransformationViewModel.TransformationDescriptor.TransformationStarter.StartTransformation();
+
+                TransformationViewModel.ProcessTransformationResults();
+            }
+            ActiveViewState = ViewState.TransformationFinished;
+        }
+
+        private void ExecuteResetCommand()
+        {
+            ActiveViewState = ViewState.TransformationStart;
         }
     }
 }

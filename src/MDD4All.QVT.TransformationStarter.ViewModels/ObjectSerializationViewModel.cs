@@ -3,6 +3,8 @@ using MDD4All.FileAccess.Contracts;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Runtime.InteropServices.ComTypes;
+using System.Xml.Serialization;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
 {
@@ -51,14 +53,27 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
         public override void ProcessTransformationResult()
         {
-            string json = JsonConvert.SerializeObject(Parameter.ParameterInstance,
-                                                      Newtonsoft.Json.Formatting.Indented,
-                                                      new JsonSerializerSettings
-                                                      {
-                                                          NullValueHandling = NullValueHandling.Ignore,
-                                                      });
+            if (Format == "JSON")
+            {
+                string json = JsonConvert.SerializeObject(Parameter.ParameterInstance,
+                                                          Newtonsoft.Json.Formatting.Indented,
+                                                          new JsonSerializerSettings
+                                                          {
+                                                              NullValueHandling = NullValueHandling.Ignore,
+                                                          });
 
-            File.WriteAllText(Parameter.SerializationFilename, json);
+                File.WriteAllText(Parameter.SerializationFilename, json);
+            }
+            else if(Format == "XML")
+            {
+                Type type = Parameter.ParameterInstance.GetType();
+                XmlSerializer serializer = new XmlSerializer(type);
+
+                TextWriter writer = new StreamWriter(Parameter.SerializationFilename);
+
+                serializer.Serialize(writer, Parameter.ParameterInstance);
+                writer.Close();
+            }
         }
     }
 }

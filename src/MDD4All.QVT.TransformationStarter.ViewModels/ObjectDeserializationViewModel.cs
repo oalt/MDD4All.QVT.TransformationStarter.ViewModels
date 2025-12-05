@@ -1,7 +1,6 @@
 ﻿using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.FileAccess.Contracts;
 using Newtonsoft.Json;
-using System;
 using System.IO;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
@@ -28,7 +27,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             set
             {
                 _filename = value;
-                VerifyDataReadability();
+                VerifyFileExistance();
             }
         }
 
@@ -44,11 +43,23 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             set
             {
                 _format = value;
-                VerifyDataReadability();
             }
         }
 
-        private void VerifyDataReadability()
+        private void VerifyFileExistance()
+        {
+            if(File.Exists(Filename))
+            {
+                _readyToRunTransformation = true;
+            }
+            else
+            {
+                _readyToRunTransformation = false;
+            }
+            RaisePropertyChanged(nameof(ReadyToRunTransformation));
+        }
+
+        private void InitializeInputData()
         {
             Parameter.ParameterInstance = null;
 
@@ -63,10 +74,14 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                             string json = File.ReadAllText(_filename);
 
                             Parameter.ParameterInstance = JsonConvert.DeserializeObject(json, Parameter.DotNetType);
+
+                            _readyToRunTransformation = true;
                         }
                         catch
                         {
                             Parameter.ParameterInstance = null;
+
+                            _readyToRunTransformation = false;
                         }
                     }
                 }
@@ -76,17 +91,19 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             RaisePropertyChanged(nameof(ReadyToRunTransformation));
         }
 
+        private bool _readyToRunTransformation = false;
+
         public override bool ReadyToRunTransformation
         {
             get
             {
-                return Parameter.ParameterInstance != null;
+                return _readyToRunTransformation;
             }
         }
 
         public override void InitializeDomainObject()
         {
-            ;
+            InitializeInputData();
         }
 
         public override void ProcessTransformationResult()
