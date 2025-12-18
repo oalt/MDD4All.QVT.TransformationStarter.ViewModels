@@ -1,16 +1,17 @@
 ﻿using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.FileAccess.Contracts;
+using MDD4All.UI.DataModels.ErrorList;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices.ComTypes;
 using System.Xml.Serialization;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
 {
     public class ObjectSerializationViewModel : DomainObjectViewModel
     {
-        public ObjectSerializationViewModel(ParameterDescriptor parameter, 
+        public ObjectSerializationViewModel(ParameterDescriptor parameter,
                                             IFileLoader fileLoader,
                                             IFileSaver fileSaver) : base(parameter,
                                                                          fileLoader,
@@ -29,24 +30,16 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             set
             {
                 _filename = value;
-                RaisePropertyChanged(nameof(ReadyToRunTransformation));
+                CheckTransformationAbility();
             }
         }
 
         public string Format { get; set; } = "JSON";
 
-        public override bool ReadyToRunTransformation
-        {
-            get
-            {
-                return !string.IsNullOrEmpty(Filename);
-            }
-        }
-
         public override void InitializeDomainObject()
-        { 
+        {
             Parameter.SerializationFilename = Filename;
-            
+
             object domainObject = Activator.CreateInstance(Parameter.DotNetType);
             Parameter.ParameterInstance = domainObject;
         }
@@ -64,7 +57,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
                 File.WriteAllText(Parameter.SerializationFilename, json);
             }
-            else if(Format == "XML")
+            else if (Format == "XML")
             {
                 Type type = Parameter.ParameterInstance.GetType();
                 XmlSerializer serializer = new XmlSerializer(type);
@@ -73,6 +66,33 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
                 serializer.Serialize(writer, Parameter.ParameterInstance);
                 writer.Close();
+            }
+        }
+
+        public override void CheckTransformationAbility()
+        {
+            Errors = new List<IErrorListElement>();
+
+            if (!string.IsNullOrEmpty(Filename))
+            {
+                ReadyToRunTransformation = true;
+
+            }
+            else
+            {
+                ReadyToRunTransformation = false;
+                Errors.Add(new ErrorListElement
+                {
+                    Description = "Error.NoFileSelected",
+                    EffectedElement = "Error.Element",
+                    LocalizationParameters = new object[]
+                                    {
+                                        Filename,
+                                        Parameter.DomainParameterType.ToString(),
+                                        Parameter.Name,
+                                        Parameter.ParameterType
+                                    }
+                });
             }
         }
     }

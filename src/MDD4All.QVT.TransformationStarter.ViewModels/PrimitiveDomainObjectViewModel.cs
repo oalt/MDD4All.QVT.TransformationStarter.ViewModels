@@ -1,5 +1,7 @@
 ﻿using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.FileAccess.Contracts;
+using MDD4All.UI.DataModels.ErrorList;
+using System.Collections.Generic;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
 {
@@ -13,13 +15,12 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
         {
         }
 
-        // TODO: Check validity of data
-        public override bool ReadyToRunTransformation
+        
+
+        public override void CheckTransformationAbility()
         {
-            get
-            {
-                return true;
-            }
+            Errors = new List<IErrorListElement>();
+            ReadyToRunTransformation = true;
         }
 
         public override void InitializeDomainObject()

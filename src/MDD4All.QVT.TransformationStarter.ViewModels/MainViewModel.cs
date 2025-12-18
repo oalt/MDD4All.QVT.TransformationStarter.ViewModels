@@ -3,7 +3,7 @@ using GalaSoft.MvvmLight.Command;
 using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.EAFacade.ModelTree.ViewModels;
 using MDD4All.FileAccess.Contracts;
-using System;
+using Microsoft.Extensions.Localization;
 using System.Windows.Input;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
@@ -15,15 +15,21 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
         public MainViewModel(ITransformationDescriptor transformationDescriptor,
                              IFileLoader fileLoader,
-                             IFileSaver fileSaver) 
+                             IFileSaver fileSaver)
         {
             _fileLoader = fileLoader;
             _fileSaver = fileSaver;
 
             TransformationViewModel = new TransformationViewModel(transformationDescriptor, _fileLoader, _fileSaver);
 
+            TransformationViewModel.PropertyChanged += OnTransformationViewModelPropertyChanged;
+
             InitializeCommands();
+
+            TransformationViewModel.CheckTransformationAbility();
         }
+
+        
 
         private void InitializeCommands()
         {
@@ -31,7 +37,10 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             ResetCommand = new RelayCommand(ExecuteResetCommand);
         }
 
-        
+        private void OnTransformationViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            RefreshStatus();
+        }
 
         public RepositoryTreeViewModel RepositoryTreeViewModel { get; set; }
 
@@ -50,7 +59,21 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
         }
 
-        public string StatusMessage { get; set; } = "Ready";
+        private string _statusMessageTitle = "Status.Ready";
+
+        public string StatusMessageTitle
+        {
+            get
+            {
+                return _statusMessageTitle;
+            }
+
+            set
+            {
+                _statusMessageTitle = value;
+                RaisePropertyChanged(nameof(StatusMessageTitle));
+            }
+        }
 
         public TransformationViewModel TransformationViewModel { get; set; }
 
@@ -60,17 +83,31 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
         private void ExecuteRunTransformation()
         {
-            TransformationViewModel.InitializeDomainObjects();
-
+            TransformationViewModel.CheckTransformationAbility();
+            
             if (TransformationViewModel.ReadyToRunTransformation)
             {
+                TransformationViewModel.InitializeDomainObjects();
+
                 ActiveViewState = ViewState.TransformationRunning;
 
                 TransformationViewModel.TransformationDescriptor.TransformationStarter.StartTransformation();
 
                 TransformationViewModel.ProcessTransformationResults();
+                ActiveViewState = ViewState.TransformationFinished;
             }
-            ActiveViewState = ViewState.TransformationFinished;
+        }
+
+        private void RefreshStatus()
+        {
+            if (TransformationViewModel.ReadyToRunTransformation)
+            {
+                StatusMessageTitle = "Status.Ready";
+            }
+            else
+            {
+                StatusMessageTitle = "Status.Error";
+            }
         }
 
         private void ExecuteResetCommand()

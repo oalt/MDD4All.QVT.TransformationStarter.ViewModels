@@ -5,7 +5,9 @@ using MDD4All.EAFacade.DataModels.Contracts;
 using MDD4All.EAFacade.DataModels.Contracts.Extensions;
 using MDD4All.EAFacade.ModelTree.ViewModels;
 using MDD4All.FileAccess.Contracts;
+using MDD4All.UI.DataModels.ErrorList;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -115,7 +117,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                     ObjectType = selectedObject.ObjectType,
                 };
 
-                ReadyToRunTransformation = true;
+                //ReadyToRunTransformation = true;
             }
 
             if (EaRepository != null)
@@ -124,6 +126,15 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
 
             ShowEaElementSelectionDialog = false;
+        }
+
+        public override void CheckTransformationAbility()
+        {
+            if (SelectedObject != null)
+            {
+                ReadyToRunTransformation = true;
+                Errors = new List<IErrorListElement>();
+            }
         }
 
         public override void InitializeDomainObject()
@@ -166,5 +177,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                 EaRepository.Exit();
             }
         }
+
+        
     }
 }

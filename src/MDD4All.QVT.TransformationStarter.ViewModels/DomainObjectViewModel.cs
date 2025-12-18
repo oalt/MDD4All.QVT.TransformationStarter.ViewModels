@@ -2,11 +2,13 @@
 using GalaSoft.MvvmLight.Command;
 using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.FileAccess.Contracts;
+using MDD4All.UI.DataModels.ErrorList;
+using System.Collections.Generic;
 using System.Windows.Input;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
 {
-    public abstract class DomainObjectViewModel : ViewModelBase
+    public abstract class DomainObjectViewModel : ViewModelBase, IErrorList
     {
         
         
@@ -58,6 +60,27 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
         }
 
+        public string DomainLocalizeTitle
+        {
+            get
+            {
+                string result = string.Empty;
+                switch (Parameter.DomainParameterType)
+                {
+                    case DomainParameterType.CheckOnly:
+                        result = "Label.DomainCheckOnly";
+                        break;
+                    case DomainParameterType.Enforce:
+                        result += "Label.DomainEnforce";
+                        break;
+                    case DomainParameterType.Primitive:
+                        result += "Label.DomainPrimitive";
+                        break;
+                }
+                return result;
+            }
+        }
+
         public string Name
         {
             get
@@ -89,6 +112,8 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
         }
 
+        public abstract void CheckTransformationAbility();
+
         public abstract void InitializeDomainObject();
 
         public abstract void ProcessTransformationResult();
@@ -100,6 +125,10 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
         public ICommand SelectFileToLoadCommand { get; private set; }
 
         public ICommand SelectFileToSaveCommand { get; private set;}
+
+        public List<IErrorListElement> Errors { get; set; } = new List<IErrorListElement>();
+
+        public bool ShowErrorCode { get; set; } = false;
 
         private void ExecuteSelectFileToLoad(string title)
         {

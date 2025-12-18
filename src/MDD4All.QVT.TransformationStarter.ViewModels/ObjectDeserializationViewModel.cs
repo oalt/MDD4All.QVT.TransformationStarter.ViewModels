@@ -1,6 +1,8 @@
 ﻿using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.FileAccess.Contracts;
+using MDD4All.UI.DataModels.ErrorList;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.IO;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
@@ -26,8 +28,11 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
             set
             {
-                _filename = value;
-                VerifyFileExistance();
+                if (value != _filename)
+                {
+                    _filename = value;
+                    CheckTransformationAbility();
+                }
             }
         }
 
@@ -46,21 +51,21 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
         }
 
-        private void VerifyFileExistance()
+        private bool VerifyFileExistence()
         {
-            if(File.Exists(Filename))
+            bool result = false;
+            if (File.Exists(Filename))
             {
-                _readyToRunTransformation = true;
+               
+                result = true;
             }
-            else
-            {
-                _readyToRunTransformation = false;
-            }
-            RaisePropertyChanged(nameof(ReadyToRunTransformation));
+            
+            return result;
         }
 
-        private void InitializeInputData()
+        private bool InitializeInputData()
         {
+            bool result = false;
             Parameter.ParameterInstance = null;
 
             if (!string.IsNullOrEmpty(_filename))
@@ -75,40 +80,97 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
                             Parameter.ParameterInstance = JsonConvert.DeserializeObject(json, Parameter.DotNetType);
 
-                            _readyToRunTransformation = true;
+                            result = true;
                         }
                         catch
                         {
                             Parameter.ParameterInstance = null;
 
-                            _readyToRunTransformation = false;
+                            result = false;
                         }
                     }
                 }
             }
 
 
-            RaisePropertyChanged(nameof(ReadyToRunTransformation));
+            return result;
         }
 
-        private bool _readyToRunTransformation = false;
 
-        public override bool ReadyToRunTransformation
+        public override void CheckTransformationAbility()
         {
-            get
+            bool fileExists = false;
+            bool inputDataValid = false;
+
+            Errors = new List<IErrorListElement>();
+
+            ReadyToRunTransformation = false;
+
+            if (VerifyFileExistence())
             {
-                return _readyToRunTransformation;
+                fileExists = true;
+
+                ReadyToRunTransformation = true;
+
+                if (InitializeInputData())
+                {
+                    inputDataValid = true;
+
+                    ReadyToRunTransformation = true;
+
+                }
+                else
+                {
+                    ReadyToRunTransformation = false;
+                }
             }
+
+            if (!fileExists)
+            {
+                Errors.Add(new ErrorListElement
+                {
+                    Description = "Error.NoFileSelected",
+                    LocalizationParameters = new object[]
+                        {
+                            Filename,
+                            Parameter.DomainParameterType.ToString(),
+                            Parameter.Name,
+                            Parameter.ParameterType
+                        },
+                    EffectedElement = "Error.Element"
+                });
+            }
+            else
+            {
+                if (!inputDataValid)
+                {
+                    Errors.Add(new ErrorListElement
+                    {
+                        Description = "Error.NoValidData",
+                        LocalizationParameters = new object[] 
+                        { 
+                            Filename, 
+                            Parameter.DomainParameterType.ToString(), 
+                            Parameter.Name,
+                            Parameter.ParameterType
+                        },
+                        EffectedElement = "Error.Element"
+                    });
+                }
+            }
+
         }
 
         public override void InitializeDomainObject()
         {
-            InitializeInputData();
+            ;
         }
 
         public override void ProcessTransformationResult()
         {
             ;
         }
+
+
     }
 }

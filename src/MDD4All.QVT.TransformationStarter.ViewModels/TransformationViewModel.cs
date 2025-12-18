@@ -1,13 +1,14 @@
 ﻿using GalaSoft.MvvmLight;
 using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.FileAccess.Contracts;
+using MDD4All.UI.DataModels.ErrorList;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
 namespace MDD4All.QVT.TransformationStarter.ViewModels
 {
-    public class TransformationViewModel : ViewModelBase
+    public class TransformationViewModel : ViewModelBase, IErrorList
     {
         private IFileLoader _fileLoader;
         private IFileSaver _fileSaver;
@@ -19,6 +20,8 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             TransformationDescriptor = transformationDescriptor;
             _fileLoader = fileLoader;
             _fileSaver = fileSaver;
+
+            
         }
 
 
@@ -242,6 +245,37 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
         }
 
+        public List<IErrorListElement> Errors 
+        {
+            get
+            {
+                List<IErrorListElement> result = new List<IErrorListElement>();
+
+                foreach (DomainObjectViewModel domainObjectViewModel in CheckOnlyViewModels)
+                {
+                    result.AddRange(domainObjectViewModel.Errors);
+                }
+
+                foreach (DomainObjectViewModel domainObjectViewModel in EnforceViewModels)
+                {
+                    result.AddRange(domainObjectViewModel.Errors);
+                }
+
+                foreach (DomainObjectViewModel domainObjectViewModel in PrimitiveDomainViewModels)
+                {
+                    result.AddRange(domainObjectViewModel.Errors);
+                }
+
+                return result;
+            }
+
+            set
+            {
+            }
+        }
+
+        public bool ShowErrorCode { get; set; } = false;
+
         private void OnDomainViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if(e.PropertyName == "ReadyToRunTransformation")
@@ -250,6 +284,23 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             }
         }
 
+        public void CheckTransformationAbility()
+        {
+            foreach (DomainObjectViewModel domainObjectViewModel in CheckOnlyViewModels)
+            {
+                domainObjectViewModel.CheckTransformationAbility();
+            }
+
+            foreach (DomainObjectViewModel domainObjectViewModel in EnforceViewModels)
+            {
+                domainObjectViewModel.CheckTransformationAbility();
+            }
+
+            foreach (DomainObjectViewModel domainObjectViewModel in PrimitiveDomainViewModels)
+            {
+                domainObjectViewModel.CheckTransformationAbility();
+            }
+        }
 
         public void InitializeDomainObjects()
         {
