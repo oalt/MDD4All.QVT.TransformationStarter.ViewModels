@@ -11,15 +11,17 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
     public abstract class DomainObjectViewModel : ViewModelBase, IErrorList
     {
         
-        
+        protected ITransformationConfiguration _configuration;
         protected IFileLoader _fileLoader;
         protected IFileSaver _fileSaver;
 
         public DomainObjectViewModel(ParameterDescriptor parameter, 
+                                     ITransformationConfiguration configuration,
                                      IFileLoader fileLoader,
                                      IFileSaver fileSaver) 
         {
             Parameter = parameter;
+            _configuration = configuration;
             _fileLoader = fileLoader;
             _fileSaver = fileSaver;
             

@@ -120,6 +120,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                         if(parameterDescriptor.Namespace == "EA")
                         {
                             EaObjectSelectionViewModel eaObjectSelectionViewModel = new EaObjectSelectionViewModel(parameterDescriptor,
+                                                                                                                   TransformationDescriptor.Configuration,
                                                                                                                    _fileLoader,
                                                                                                                    _fileSaver);
 
@@ -130,6 +131,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                         else
                         {
                             ObjectDeserializationViewModel objectDeserializationViewModel = new ObjectDeserializationViewModel(parameterDescriptor,
+                                                                                                                               TransformationDescriptor.Configuration,
                                                                                                                                _fileLoader,
                                                                                                                                _fileSaver);
 
@@ -195,6 +197,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                         if (parameterDescriptor.Namespace == "EA")
                         {
                             EaObjectSelectionViewModel eaObjectSelectionViewModel = new EaObjectSelectionViewModel(parameterDescriptor,
+                                                                                                                   TransformationDescriptor.Configuration,
                                                                                                                    _fileLoader,
                                                                                                                    _fileSaver);
 
@@ -204,6 +207,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                         else
                         {
                             ObjectSerializationViewModel domainObjectViewModel = new ObjectSerializationViewModel(parameterDescriptor, 
+                                                                                                                  TransformationDescriptor.Configuration,
                                                                                                                   _fileLoader,
                                                                                                                   _fileSaver);
                             domainObjectViewModel.PropertyChanged += OnDomainViewModelPropertyChanged;
@@ -231,6 +235,7 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                     foreach(ParameterDescriptor parameterDescriptor in PrimitiveParameters)
                     {
                         PrimitiveDomainObjectViewModel domainObjectViewModel = new PrimitiveDomainObjectViewModel(parameterDescriptor,
+                                                                                                                  TransformationDescriptor.Configuration,
                                                                                                                   _fileLoader,
                                                                                                                   _fileSaver);
                         

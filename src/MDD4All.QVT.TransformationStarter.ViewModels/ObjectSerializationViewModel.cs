@@ -1,7 +1,6 @@
 ﻿using LL.MDE.Components.Qvt.Common.DataModels;
 using MDD4All.FileAccess.Contracts;
 using MDD4All.UI.DataModels.ErrorList;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,8 +11,10 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
     public class ObjectSerializationViewModel : DomainObjectViewModel
     {
         public ObjectSerializationViewModel(ParameterDescriptor parameter,
+                                            ITransformationConfiguration configuration,
                                             IFileLoader fileLoader,
                                             IFileSaver fileSaver) : base(parameter,
+                                                                         configuration,
                                                                          fileLoader,
                                                                          fileSaver)
         {
@@ -48,14 +49,8 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
         {
             if (Format == "JSON")
             {
-                string json = JsonConvert.SerializeObject(Parameter.ParameterInstance,
-                                                          Newtonsoft.Json.Formatting.Indented,
-                                                          new JsonSerializerSettings
-                                                          {
-                                                              NullValueHandling = NullValueHandling.Ignore,
-                                                          });
-
-                File.WriteAllText(Parameter.SerializationFilename, json);
+                Type type = Parameter.ParameterInstance.GetType();
+                _configuration.JsonSerializer.SerializeToJsonFile(Parameter.SerializationFilename, type, Parameter.ParameterInstance);
             }
             else if (Format == "XML")
             {

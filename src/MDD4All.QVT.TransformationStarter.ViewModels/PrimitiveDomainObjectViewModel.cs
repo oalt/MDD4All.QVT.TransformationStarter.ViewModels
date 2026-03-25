@@ -8,8 +8,10 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
     public class PrimitiveDomainObjectViewModel : DomainObjectViewModel
     {
         public PrimitiveDomainObjectViewModel(ParameterDescriptor parameter, 
+                                              ITransformationConfiguration transformationConfiguration,
                                               IFileLoader fileLoader, 
                                               IFileSaver fileSaver) : base(parameter,
+                                                                           transformationConfiguration,
                                                                            fileLoader, 
                                                                            fileSaver)
         {
