@@ -32,13 +32,37 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             CloseSelectionDialogCommand = new RelayCommand(ExecuteCloseSelectionDialog);
         }
 
-        public string ConnectionString { get; set; } = string.Empty;
+        private string _connectionString = string.Empty;
+
+        public string ConnectionString 
+        {
+            get
+            {
+                return _connectionString;
+            }
+            set 
+            {
+                if (value != _connectionString)
+                {
+                    if(EaRepository != null)
+                    {
+                        EaRepository.Exit();
+                        EaRepository = null;
+                    }
+                    _connectionString = value;
+                }
+            } 
+        }
 
         public RepositoryObjectDescriptor SelectedObject { get; set; } = null;
 
         public bool ShowEaElementSelectionDialog { get; set; } = false;
 
         public EA.Repository EaRepository { get; set; }
+
+        public bool KeepModelOpen { get; set; } = true;
+
+        public bool ModelOpenErrorOccured { get; set; } = false;
 
         public RepositoryTreeViewModel RepositoryTreeViewModel { get; set; }
 
@@ -57,47 +81,61 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
             Task.Run(OpenAndCacheEaModelAsync);
         }
 
+        private CachedRepository _cachedRepository = null;
+
         private async Task OpenAndCacheEaModelAsync()
         {
             Task result = null;
 
             await Task.Run(() =>
             {
-                string progId = "EA.Repository";
-                Type type = Type.GetTypeFromProgID(progId);
-                EaRepository = Activator.CreateInstance(type) as EA.Repository;
-
-                bool openResult = EaRepository.OpenFile(ConnectionString);
-
-                if (openResult)
+                try
                 {
-                    EaRepository.ShowWindow(1);
-
-
-                    CachedRepository cachedRepository = new CachedRepository(EaRepository);
-                    cachedRepository.CacheAll();
-
-
-
-                    if (Parameter.ParameterType == "Package")
+                    if (EaRepository == null)
                     {
-                        RepositoryTreeViewModel = new RepositoryTreeViewModel(cachedRepository, false, false, false);
+                        string progId = "EA.Repository";
+                        Type type = Type.GetTypeFromProgID(progId);
+                        EaRepository = Activator.CreateInstance(type) as EA.Repository;
 
+                        bool openResult = EaRepository.OpenFile(ConnectionString);
+
+                        if (openResult)
+                        {
+                            EaRepository.ShowWindow(1);
+
+
+                            _cachedRepository = new CachedRepository(EaRepository);
+                            _cachedRepository.CacheAll();
+                        }
                     }
-                    else if (Parameter.ParameterType == "Element")
+
+                    if (_cachedRepository != null)
                     {
-                        RepositoryTreeViewModel = new RepositoryTreeViewModel(cachedRepository, true, true, false);
+                        if (Parameter.ParameterType == "Package")
+                        {
+                            RepositoryTreeViewModel = new RepositoryTreeViewModel(_cachedRepository, false, false, false);
+                        }
+                        else if (Parameter.ParameterType == "Element")
+                        {
+                            RepositoryTreeViewModel = new RepositoryTreeViewModel(_cachedRepository, true, true, false);
+                        }
+                        else if (Parameter.ParameterType == "Diagram")
+                        {
+                            RepositoryTreeViewModel = new RepositoryTreeViewModel(_cachedRepository, false, false, true);
+                        }
                     }
-                    else if (Parameter.ParameterType == "Diagram")
-                    {
-                        RepositoryTreeViewModel = new RepositoryTreeViewModel(cachedRepository, false, false, true);
-                    }
-                    RaisePropertyChanged("RepositoryTreeViewModel");
                 }
-            }
-                );
-
-
+                catch
+                {
+                    ModelOpenErrorOccured = true;
+                    EaRepository = null;
+                    
+                }
+                finally
+                {
+                    RaisePropertyChanged(nameof(RepositoryTreeViewModel));
+                }
+            });
         }
 
         private bool CanExecuteShowSelectionDialogCommand()
@@ -107,26 +145,29 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
         private void ExecuteCloseSelectionDialog()
         {
-            RepositoryObjectViewModel selectedObject = RepositoryTreeViewModel.SelectedRepositoryObject;
-
-            if (selectedObject != null)
+            if (RepositoryTreeViewModel != null)
             {
-                SelectedObject = new RepositoryObjectDescriptor
+                RepositoryObjectViewModel selectedObject = RepositoryTreeViewModel.SelectedRepositoryObject;
+
+                if (selectedObject != null)
                 {
-                    ConnectionString = selectedObject.ConnectionString,
-                    GUID = selectedObject.GUID,
-                    Name = selectedObject.Name,
-                    ObjectType = selectedObject.ObjectType,
-                };
+                    SelectedObject = new RepositoryObjectDescriptor
+                    {
+                        ConnectionString = selectedObject.ConnectionString,
+                        GUID = selectedObject.GUID,
+                        Name = selectedObject.Name,
+                        ObjectType = selectedObject.ObjectType,
+                    };
 
-                //ReadyToRunTransformation = true;
+                    ReadyToRunTransformation = true;
+                }
             }
-
-            if (EaRepository != null)
+            else
             {
-                EaRepository.Exit();
+                ReadyToRunTransformation = false;
             }
 
+            ModelOpenErrorOccured = false;
             ShowEaElementSelectionDialog = false;
         }
 
@@ -141,19 +182,20 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
 
         public override void InitializeDomainObject()
         {
-           
 
-            string progId = "EA.Repository";
-            Type type = Type.GetTypeFromProgID(progId);
-            EaRepository = Activator.CreateInstance(type) as EA.Repository;
-
-            bool openResult = EaRepository.OpenFile(SelectedObject.ConnectionString);
-
-            if (openResult)
+            if (EaRepository == null)
             {
-                EaRepository.ShowWindow(1);
-            }
+                string progId = "EA.Repository";
+                Type type = Type.GetTypeFromProgID(progId);
+                EaRepository = Activator.CreateInstance(type) as EA.Repository;
 
+                bool openResult = EaRepository.OpenFile(SelectedObject.ConnectionString);
+
+                if (openResult)
+                {
+                    EaRepository.ShowWindow(1);
+                }
+            }
 
             if (SelectedObject.ObjectType == ObjectType.otPackage)
             {
@@ -176,7 +218,15 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
         {
             if (EaRepository != null)
             {
-                EaRepository.Exit();
+                if(SelectedObject != null && SelectedObject.ObjectType == ObjectType.otPackage)
+                {
+                    EA.Package package = EaRepository.GetPackageByGuid(SelectedObject.GUID);
+                    EaRepository.ReloadPackage(package.PackageID);
+                }
+                if (!KeepModelOpen)
+                {
+                    EaRepository.Exit();
+                }
             }
         }
 
