@@ -197,6 +197,8 @@ namespace MDD4All.QVT.TransformationStarter.ViewModels
                 }
             }
 
+            Parameter.RepositoryInstance = EaRepository;
+
             if (SelectedObject.ObjectType == ObjectType.otPackage)
             {
                 EA.Package package = EaRepository.GetPackageByGuid(SelectedObject.GUID);
